@@ -1,167 +1,174 @@
-cat > README.md << 'EOF'
+# SOC Automation Engine – Demo
 
-\# SOC Automation Engine – Demo
+Motor ligero de automatización para SOC (Security Operations Center) que recibe logs vía HTTP, normaliza eventos y detecta ataques de fuerza bruta utilizando ventanas temporales inteligentes.
 
+---
 
+# 🚀 Funcionalidades
 
-Motor ligero de automatización para SOC (Security Operations Center) que recibe logs vía HTTP, normaliza eventos y detecta ataques de fuerza bruta con ventana temporal de 60 segundos.
+- Ingesta de logs vía API REST (`POST /log`)
+- Normalización flexible de eventos
+- Detección de fuerza bruta:
+  - 5 fallos desde misma IP + usuario en 60 segundos
+  - Genera alerta `CRITICAL`
+- Detección de login sospechoso:
+  - Login exitoso después de múltiples fallos
+  - Genera alerta `HIGH`
+- Expiración automática de contadores
+- Arquitectura modular
+- Extensible a:
+  - Slack
+  - Discord
+  - Telegram
+  - Webhooks
+  - SIEM externos
+- Script automático de pruebas incluido
 
+---
 
+# 📦 Requisitos
 
-\## 🚀 Funcionalidades
+- Python 3.12+
+- pip
 
+## Dependencias
 
+- Flask
+- Requests
 
-\- Ingesta de logs por API REST (POST `/log`)
+---
 
-\- Normalización flexible (soporta campos opcionales)
+# ⚙️ Instalación
 
-\- Detección de fuerza bruta: 5 fallos desde misma IP y usuario en 60 segundos → alerta `CRITICAL`
-
-\- Login sospechoso tras fallos previos → alerta `HIGH`
-
-\- Contadores independientes por `(usuario, IP)` con expiración automática
-
-\- Alertas en consola (extensible a webhook, Slack, etc.)
-
-\- Script de pruebas automáticas
-
-
-
-\## 📦 Requisitos
-
-
-
-\- Python 3.12+
-
-\- Dependencias: `flask`, `requests`
-
-
-
-\## ⚙️ Instalación y ejecución
-
-
+## 1. Clonar proyecto
 
 ```bash
-
-\\# Clonar (o navegar a tu carpeta)
-
+git clone https://github.com/tuusuario/soc-engine.git
 cd soc-engine
+```
 
+## 2. Crear entorno virtual
 
+### Linux / macOS
 
-\\# Crear y activar entorno virtual
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
 
+### Windows
+
+```powershell
 python -m venv venv
+venv\Scripts\activate
+```
 
-source venv/bin/activate   # En Windows: venv\\\\Scripts\\\\activate
+---
 
+# 📥 Instalar dependencias
 
-
-\\# Instalar dependencias
-
+```bash
 pip install -r requirements.txt
+```
 
+---
 
+# ▶️ Ejecutar el servidor
 
-\\# Ejecutar servidor
-
+```bash
 python app.py
+```
 
-🧪 Probar con curl
+Servidor disponible en:
 
-bash
+```text
+http://localhost:5000
+```
 
-\\# Enviar 5 fallos (el quinto activa la alerta)
+---
 
+# 🧪 Pruebas manuales con curl
+
+## Simular ataque de fuerza bruta
+
+El quinto intento genera alerta `CRITICAL`.
+
+```bash
 for i in {1..5}; do
-
-\&#x20; curl -X POST http://localhost:5000/log \\\\
-
-\&#x20;   -H "Content-Type: application/json" \\\\
-
-\&#x20;   -d '{"user":"admin","ip":"192.168.1.100","event":"login\\\_failed"}'
-
+  curl -X POST http://localhost:5000/log \
+    -H "Content-Type: application/json" \
+    -d '{"user":"admin","ip":"192.168.1.100","event":"login_failed"}'
 done
+```
 
+---
 
+## Simular login sospechoso
 
-\\# Enviar login exitoso (debe dar SUSPICIOUS\\\_LOGIN)
+Debe generar alerta `SUSPICIOUS_LOGIN`.
 
-curl -X POST http://localhost:5000/log \\\\
+```bash
+curl -X POST http://localhost:5000/log \
+  -H "Content-Type: application/json" \
+  -d '{"user":"admin","ip":"192.168.1.100","event":"login_success"}'
+```
 
-\&#x20; -H "Content-Type: application/json" \\\\
+---
 
-\&#x20; -d '{"user":"admin","ip":"192.168.1.100","event":"login\\\_success"}'
+# 🧪 Ejecutar pruebas automáticas
 
-🧪 Prueba automática
+```bash
+python test_demo.py
+```
 
-bash
+---
 
-python test\\\_demo.py
+# 📁 Estructura del proyecto
 
-📁 Estructura de archivos
+```text
+soc-engine/
+│
+├── app.py
+├── ingest.py
+├── parser.py
+├── rules.py
+├── alerting.py
+├── test_demo.py
+├── requirements.txt
+├── iniciar.sh
+└── README.md
+```
 
-app.py – punto de entrada
+---
 
+# 🚨 Tipos de alertas
 
+| Tipo | Severidad | Descripción |
+|---|---|---|
+| BRUTE_FORCE | CRITICAL | 5 fallos en menos de 60 segundos |
+| SUSPICIOUS_LOGIN | HIGH | Login exitoso tras múltiples fallos |
 
-ingest.py – endpoint /log
+---
 
+# 🔒 Recomendaciones para producción
 
+- Gunicorn
+- Docker
+- Redis
+- PostgreSQL
+- Integración SIEM
+- MISP/TAXII
 
-parser.py – normaliza logs
+---
 
+# ✒️ Autor
 
+**modbman**
 
-rules.py – reglas de detección (ventana temporal)
+GitHub: https://github.com/modbman
 
+---
 
+# 📜 Licencia
 
-alerting.py – muestra alertas en consola
-
-
-
-test\\\_demo.py – batería de pruebas
-
-
-
-requirements.txt – dependencias
-
-
-
-iniciar.sh – script de inicio rápido
-
-
-
-📌 Notas
-
-Los contadores se limpian automáticamente después de 60 segundos sin actividad por cada (user, ip).
-
-
-
-Para producción, reemplazar app.run por un servidor WSGI (gunicorn) y añadir cola de mensajes.
-
-
-
-🛠️ Solución de problemas
-
-Si pip install falla, asegúrate de haber activado el entorno virtual.
-
-
-
-Si el puerto 5000 ya está ocupado, cambia el puerto en app.py (última línea).
-
-
-
-Si no ves alertas, verifica que envías 5 fallos seguidos desde la misma IP y usuario antes de 60 segundos.
-
-
-
-✒️ Autor
-
-modbman – GitHub
-
-EOF
-
-
+MIT License
